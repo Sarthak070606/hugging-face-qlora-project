@@ -1,0 +1,57 @@
+# ============================================================
+# QLoRA Domain Specialist - Configuration
+# ============================================================
+
+model:
+  # Recommended options (pick based on your GPU):
+  # - Qwen/Qwen2.5-1.5B-Instruct   → Free Colab / 8-12GB VRAM (default)
+  # - microsoft/Phi-3-mini-4k-instruct
+  # - Qwen/Qwen2.5-3B-Instruct     → 16GB+ VRAM
+  # - meta-llama/Llama-3.2-3B-Instruct (requires HF token)
+  base_model: "Qwen/Qwen2.5-1.5B-Instruct"
+  max_seq_length: 1024
+  torch_dtype: "bfloat16"
+
+quantization:
+  load_in_4bit: true
+  bnb_4bit_quant_type: "nf4"
+  bnb_4bit_use_double_quant: true
+  bnb_4bit_compute_dtype: "bfloat16"
+
+lora:
+  r: 16                    # Rank: 8 / 16 / 32 / 64
+  lora_alpha: 32           # Usually 2x rank
+  lora_dropout: 0.05
+  bias: "none"
+  task_type: "CAUSAL_LM"
+  target_modules: "all-linear"   # modern best practice
+
+training:
+  output_dir: "./outputs/qlora-qwen-domain"
+  num_train_epochs: 2
+  per_device_train_batch_size: 2
+  gradient_accumulation_steps: 8   # effective batch = 16
+  learning_rate: 2.0e-4            # higher LR for LoRA/QLoRA
+  lr_scheduler_type: "cosine"
+  warmup_ratio: 0.05
+  logging_steps: 10
+  save_strategy: "epoch"
+  bf16: true
+  gradient_checkpointing: true
+  packing: true
+  report_to: "none"                # change to "wandb" or "tensorboard" if desired
+
+dataset:
+  # Easy public datasets you can swap:
+  # - HuggingFaceH4/ultrachat_200k (split: train_sft)
+  # - databricks/databricks-dolly-15k
+  # - OpenAssistant/oasst1
+  # - or your own JSONL in data/custom_data.jsonl
+  name: "HuggingFaceH4/ultrachat_200k"
+  split: "train_sft[:4000]"        # start small for testing
+  text_field: null                 # handled by chat template
+
+hub:
+  push_to_hub: false
+  repo_id: "your-username/qwen2.5-1.5b-qlora-domain"
+  private: false
